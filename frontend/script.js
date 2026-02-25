@@ -2,6 +2,8 @@
 document.addEventListener("DOMContentLoaded", () => {
     const contactForm = document.getElementById("contactForm");
 
+    if (!contactForm) return; // Guard: exit if form not found
+
     // Handle form submission
     contactForm.addEventListener("submit", async (event) => {
         event.preventDefault(); // Prevent page reload
@@ -13,6 +15,11 @@ document.addEventListener("DOMContentLoaded", () => {
             message: document.getElementById("message").value.trim()
         };
 
+        // Disable button while sending
+        const submitButton = contactForm.querySelector("button[type='submit']");
+        submitButton.disabled = true;
+        submitButton.textContent = "Sending...";
+
         try {
             // Send data to backend
             const response = await fetch("http://localhost:5000/contact", {
@@ -21,10 +28,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 body: JSON.stringify(formData)
             });
 
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+
             const result = await response.json();
 
             // Show success message
-            alert("✅ " + result.message);
+            alert("✅ " + (result.message || "Message sent successfully!"));
 
             // Reset form after successful submission
             contactForm.reset();
@@ -32,6 +43,10 @@ document.addEventListener("DOMContentLoaded", () => {
             // Show error message
             alert("❌ An error occurred while sending your message. Please try again later.");
             console.error("Error:", error);
+        } finally {
+            // Re-enable button
+            submitButton.disabled = false;
+            submitButton.textContent = "Send Message";
         }
     });
 });
