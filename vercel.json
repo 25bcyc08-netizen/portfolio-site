@@ -1,11 +1,23 @@
 {
   "version": 2,
-  "buildCommand": "npm install",
+  // run npm install inside backend directory instead of root
+  "installCommand": "cd backend && npm install",
+  "buildCommand": "cd backend && npm install",
   "public": true,
-  "rewrites": [
+  "builds": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
+      "src": "frontend/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "backend/api/**/*.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/backend/api/$1.js"
     }
   ]
 }
