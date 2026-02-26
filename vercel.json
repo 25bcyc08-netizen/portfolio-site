@@ -1,6 +1,5 @@
 {
   "version": 2,
-  // run npm install inside backend directory instead of root
   "installCommand": "cd backend && npm install",
   "buildCommand": "cd backend && npm install",
   "public": true,
