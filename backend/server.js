@@ -1,72 +1,43 @@
 import express from 'express';
 import cors from 'cors';
-import sqlite3 from 'sqlite3';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { connect } from './api/db.js';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const dbPath = path.join(__dirname, 'messages.db');
-const db = new sqlite3.Database(dbPath);
-// create table if it doesn't exist
-db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS contact_messages (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      email TEXT NOT NULL,
-      message TEXT NOT NULL
-    )
-  `);
+// establish connection (ensures schema too)
+let db;
+connect().then(d => { db = d; }).catch(err => {
+  console.error('Failed to open database:', err);
 });
 
-app.post('/contact', (req, res) => {
+app.post('/contact', async (req, res) => {
   const { name, email, message } = req.body;
   if (!name || !email || !message) {
     return res.status(400).json({ message: 'All fields are required.' });
   }
 
-  // Delete all previous messages first
-  db.run('DELETE FROM contact_messages', function (err) {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ message: 'Database error' });
-    }
-
-    // Then insert the new message
-    const stmt = db.prepare(
-      'INSERT INTO contact_messages (name, email, message) VALUES (?, ?, ?)',
+  try {
+    const result = await db.run(
+      'INSERT INTO messages (name, email, message) VALUES (?, ?, ?)',
+      [name, email, message]
     );
-    stmt.run(name, email, message, function (err) {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({ message: 'Database error' });
-      }
-      res.json({ message: 'Message saved successfully!', id: this.lastID });
-    });
-    stmt.finalize();
-  });
+    res.json({ message: 'Message saved successfully!', id: result.lastID });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Database error' });
+  }
 });
 
-app.get('/messages', (req, res) => {
-  db.all('SELECT * FROM contact_messages', [], (err, rows) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ message: 'Database error' });
-    }
-    const messages = rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      email: row.email,
-      message: row.message,
-    }));
-    res.json(messages);
-  });
+app.get('/messages', async (req, res) => {
+  try {
+    const rows = await db.all('SELECT * FROM messages');
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Database error' });
+  }
 });
 
 const port = process.env.PORT || 5000;

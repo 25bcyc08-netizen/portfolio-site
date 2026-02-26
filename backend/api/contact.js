@@ -1,14 +1,4 @@
-import mongoose from 'mongoose';
 import { connect } from './db.js';
-
-const messageSchema = new mongoose.Schema({
-  name: String,
-  email: String,
-  message: String,
-  createdAt: { type: Date, default: Date.now }
-});
-
-const Message = mongoose.model('Message', messageSchema);
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -30,16 +20,16 @@ export default async function handler(req, res) {
       return res.status(400).json({ message: 'All fields are required.' });
     }
 
-    // connect will throw if MONGODB_URI missing
-    await connect();
+    const db = await connect();
 
-    // don't delete existing messages; just insert the new one
-    const newMessage = new Message({ name, email, message });
-    await newMessage.save();
+    const result = await db.run(
+      'INSERT INTO messages (name, email, message) VALUES (?, ?, ?)',
+      [name, email, message]
+    );
 
-    return res.status(200).json({ message: 'Message saved successfully!', id: newMessage._id });
+    return res.status(200).json({ message: 'Message saved successfully!', id: result.lastID });
   } catch (error) {
-    console.error('Contact API Error:', error.message);
-    return res.status(500).json({ message: 'Error saving message', error: error.message });
+    console.error('Contact API Error:', error);
+    return res.status(500).json({ message: 'Error saving message', error: String(error) });
   }
-}
+} 
