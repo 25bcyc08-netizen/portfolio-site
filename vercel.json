@@ -5,7 +5,11 @@
   "public": true,
   "builds": [
     {
-      "src": "frontend/**",
+      "src": "frontend/index.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "frontend/**/*.{css,js,png,jpg,jpeg,gif,svg,ico}",
       "use": "@vercel/static"
     },
     {
@@ -19,8 +23,16 @@
       "dest": "/backend/api/$1.js"
     },
     {
-      "src": "/(.*)",
+      "src": "/frontend/(.*)",
       "dest": "/frontend/$1"
+    },
+    {
+      "src": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg|ico))$",
+      "dest": "/frontend/$1"
+    },
+    {
+      "src": "/.*",
+      "dest": "/frontend/index.html"
     }
   ]
 }
