@@ -1,8 +1,46 @@
 // Wait until the DOM is fully loaded
 document.addEventListener("DOMContentLoaded", () => {
     const contactForm = document.getElementById("contactForm");
+    const messagesList = document.getElementById("messagesList");
 
     if (!contactForm) return; // Guard: exit if form not found
+
+    // Function to fetch and display all messages
+    const loadMessages = async () => {
+        try {
+            const response = await fetch("http://10.20.163.119:5000/messages");
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+            const messages = await response.json();
+
+            if (messages.length === 0) {
+                messagesList.innerHTML = "<p>No messages yet. Be the first to send one!</p>";
+                return;
+            }
+
+            // Clear loading text and display messages
+            messagesList.innerHTML = "";
+            messages.forEach((msg) => {
+                const messageDiv = document.createElement("div");
+                messageDiv.className = "message-card";
+                messageDiv.innerHTML = `
+                    <div class="message-header">
+                        <h3>${msg.name}</h3>
+                        <p class="message-email">${msg.email}</p>
+                    </div>
+                    <p class="message-content">${msg.message}</p>
+                `;
+                messagesList.appendChild(messageDiv);
+            });
+        } catch (error) {
+            messagesList.innerHTML = "<p>Could not load messages. Please try again later.</p>";
+            console.error("Error loading messages:", error);
+        }
+    };
+
+    // Load messages on page load
+    loadMessages();
 
     // Handle form submission
     contactForm.addEventListener("submit", async (event) => {
@@ -21,8 +59,8 @@ document.addEventListener("DOMContentLoaded", () => {
         submitButton.textContent = "Sending...";
 
         try {
-            // Send data to backend
-            const response = await fetch("http://localhost:5000/contact", {
+            // Send data to backend using your IP
+            const response = await fetch("http://10.20.163.119:5000/contact", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData)
@@ -39,6 +77,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Reset form after successful submission
             contactForm.reset();
+
+            // Reload messages to show the new submission
+            loadMessages();
         } catch (error) {
             // Show error message
             alert("❌ An error occurred while sending your message. Please try again later.");
