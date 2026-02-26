@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Function to fetch and display all messages
     const loadMessages = async () => {
         try {
-            const response = await fetch("http://10.20.163.119:5000/messages");
+            const response = await fetch("/api/messages");
             if (!response.ok) {
                 throw new Error(`Server error: ${response.status}`);
             }
@@ -59,8 +59,8 @@ document.addEventListener("DOMContentLoaded", () => {
         submitButton.textContent = "Sending...";
 
         try {
-            // Send data to backend using your IP
-            const response = await fetch("http://10.20.163.119:5000/contact", {
+            // Send data to backend (relative path works on Vercel deployment)
+            const response = await fetch("/api/contact", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData)
