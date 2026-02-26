@@ -1,25 +1,40 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+import mongoose from 'mongoose';
 
-const dbPath = path.join(__dirname, '../messages.db');
-const db = new sqlite3.Database(dbPath);
+const mongoUri = process.env.MONGODB_URI;
 
-export default function handler(req, res) {
+const messageSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  message: String,
+  createdAt: { type: Date, default: Date.now }
+});
+
+const Message = mongoose.model('Message', messageSchema);
+
+export default async function handler(req, res) {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST,PUT,DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
-  db.all('SELECT * FROM contact_messages', [], (err, rows) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).json({ message: 'Database error' });
-    }
-    const messages = rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      email: row.email,
-      message: row.message,
-    }));
-    res.json(messages);
-  });
+  try {
+    await mongoose.connect(mongoUri);
+
+    const messages = await Message.find();
+    res.status(200).json(messages);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: 'Database error', error: error.message });
+  } finally {
+    await mongoose.disconnect();
+  }
 }
