@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
-
-const mongoUri = process.env.MONGODB_URI;
+import { connect } from './db.js';
 
 const messageSchema = new mongoose.Schema({
   name: String,
@@ -24,26 +23,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
-  let connection;
   try {
-    if (!mongoUri) {
-      console.error('MONGODB_URI not set');
-      return res.status(500).json({ message: 'Server error: Missing MongoDB URI' });
-    }
-
-    connection = mongoose.connection.readyState;
-    if (connection === 0) {
-      await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 });
-    }
+    // connect helper will check uri/connection
+    await connect();
 
     const messages = await Message.find();
     return res.status(200).json(messages);
   } catch (error) {
     console.error('Messages API Error:', error.message);
     return res.status(500).json({ message: 'Error fetching messages', error: error.message });
-  } finally {
-    if (mongoose.connection.readyState === 1) {
-      await mongoose.disconnect();
-    }
   }
 }

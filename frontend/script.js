@@ -29,13 +29,24 @@ document.addEventListener("DOMContentLoaded", () => {
             messages.forEach((msg) => {
                 const messageDiv = document.createElement("div");
                 messageDiv.className = "message-card";
-                messageDiv.innerHTML = `
-                    <div class="message-header">
-                        <h3>${msg.name}</h3>
-                        <p class="message-email">${msg.email}</p>
-                    </div>
-                    <p class="message-content">${msg.message}</p>
-                `;
+
+                const header = document.createElement("div");
+                header.className = "message-header";
+
+                const nameEl = document.createElement("h3");
+                nameEl.textContent = msg.name;
+
+                const emailEl = document.createElement("p");
+                emailEl.className = "message-email";
+                emailEl.textContent = msg.email;
+
+                header.append(nameEl, emailEl);
+
+                const contentEl = document.createElement("p");
+                contentEl.className = "message-content";
+                contentEl.textContent = msg.message;
+
+                messageDiv.append(header, contentEl);
                 messagesList.appendChild(messageDiv);
             });
         } catch (error) {

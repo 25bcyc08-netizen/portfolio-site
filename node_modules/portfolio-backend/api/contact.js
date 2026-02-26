@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
-
-const mongoUri = process.env.MONGODB_URI;
+import { connect } from './db.js';
 
 const messageSchema = new mongoose.Schema({
   name: String,
@@ -24,7 +23,6 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
-  let connection;
   try {
     const { name, email, message } = req.body;
 
@@ -32,17 +30,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ message: 'All fields are required.' });
     }
 
-    if (!mongoUri) {
-      console.error('MONGODB_URI not set');
-      return res.status(500).json({ message: 'Server error: Missing MongoDB URI' });
-    }
+    // connect will throw if MONGODB_URI missing
+    await connect();
 
-    connection = mongoose.connection.readyState;
-    if (connection === 0) {
-      await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 });
-    }
-
-    await Message.deleteMany({});
+    // don't delete existing messages; just insert the new one
     const newMessage = new Message({ name, email, message });
     await newMessage.save();
 
@@ -50,9 +41,5 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('Contact API Error:', error.message);
     return res.status(500).json({ message: 'Error saving message', error: error.message });
-  } finally {
-    if (mongoose.connection.readyState === 1) {
-      await mongoose.disconnect();
-    }
   }
 }
