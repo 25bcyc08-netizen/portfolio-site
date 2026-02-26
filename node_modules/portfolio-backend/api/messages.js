@@ -12,41 +12,38 @@ const messageSchema = new mongoose.Schema({
 const Message = mongoose.model('Message', messageSchema);
 
 export default async function handler(req, res) {
-  // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST,PUT,DELETE');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
+  let connection;
   try {
     if (!mongoUri) {
-      console.error('MONGODB_URI is not set in environment variables');
-      return res.status(500).json({ message: 'Server configuration error: Missing MONGODB_URI' });
+      console.error('MONGODB_URI not set');
+      return res.status(500).json({ message: 'Server error: Missing MongoDB URI' });
     }
 
-    console.log('Connecting to MongoDB for messages...');
-    await mongoose.connect(mongoUri);
-    console.log('Connected to MongoDB successfully');
+    connection = mongoose.connection.readyState;
+    if (connection === 0) {
+      await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 });
+    }
 
     const messages = await Message.find();
-    console.log(`Found ${messages.length} messages`);
-    res.status(200).json(messages);
+    return res.status(200).json(messages);
   } catch (error) {
-    console.error('Messages API Error:', error);
-    res.status(500).json({ message: 'Database error', errorDetails: error.message });
+    console.error('Messages API Error:', error.message);
+    return res.status(500).json({ message: 'Error fetching messages', error: error.message });
   } finally {
-    try {
+    if (mongoose.connection.readyState === 1) {
       await mongoose.disconnect();
-    } catch (e) {
-      console.error('Disconnect error:', e);
     }
   }
 }

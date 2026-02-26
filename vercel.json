@@ -5,30 +5,28 @@
   "public": true,
   "builds": [
     {
-      "src": "frontend/index.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "frontend/**/*.{css,js,png,jpg,jpeg,gif,svg,ico}",
-      "use": "@vercel/static"
-    },
-    {
       "src": "backend/api/**/*.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "frontend/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/backend/api/$1.js"
+      "src": "/api/contact",
+      "dest": "/backend/api/contact.js",
+      "methods": ["POST", "OPTIONS"]
     },
     {
-      "src": "/frontend/(.*)",
-      "dest": "/frontend/$1"
+      "src": "/api/messages",
+      "dest": "/backend/api/messages.js",
+      "methods": ["GET", "OPTIONS"]
     },
     {
-      "src": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg|ico))$",
-      "dest": "/frontend/$1"
+      "src": "/(.*)\\.(js|css|svg|png|jpg|jpeg|gif|ico)$",
+      "dest": "/frontend/$1.$2"
     },
     {
       "src": "/.*",
