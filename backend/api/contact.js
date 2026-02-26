@@ -27,7 +27,14 @@ export default async function handler(req, res) {
   }
 
   try {
+    if (!mongoUri) {
+      console.error('MONGODB_URI is not set in environment variables');
+      return res.status(500).json({ message: 'Server configuration error: Missing MONGODB_URI' });
+    }
+
+    console.log('Connecting to MongoDB...');
     await mongoose.connect(mongoUri);
+    console.log('Connected to MongoDB successfully');
 
     const { name, email, message } = req.body;
     if (!name || !email || !message) {
@@ -41,11 +48,16 @@ export default async function handler(req, res) {
     const newMessage = new Message({ name, email, message });
     await newMessage.save();
 
+    console.log('Message saved successfully');
     res.status(200).json({ message: 'Message saved successfully!', id: newMessage._id });
   } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ message: 'Database error', error: error.message });
+    console.error('Contact API Error:', error);
+    res.status(500).json({ message: 'Database error', errorDetails: error.message });
   } finally {
-    await mongoose.disconnect();
+    try {
+      await mongoose.disconnect();
+    } catch (e) {
+      console.error('Disconnect error:', e);
+    }
   }
 }
