@@ -10,7 +10,12 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const response = await fetch("/api/messages");
             if (!response.ok) {
-                throw new Error(`Server error: ${response.status}`);
+                let errText = `Status ${response.status}`;
+                try {
+                    const errBody = await response.json();
+                    errText = errBody.error || errBody.message || JSON.stringify(errBody);
+                } catch (_e) {}
+                throw new Error(errText);
             }
             const messages = await response.json();
 
@@ -67,7 +72,12 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             if (!response.ok) {
-                throw new Error(`Server error: ${response.status}`);
+                let errText = `Status ${response.status}`;
+                try {
+                    const errBody = await response.json();
+                    errText = errBody.error || errBody.message || JSON.stringify(errBody);
+                } catch (_e) {}
+                throw new Error(errText);
             }
 
             const result = await response.json();
