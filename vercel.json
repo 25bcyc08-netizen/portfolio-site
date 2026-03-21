@@ -1,8 +1,7 @@
 {
   "version": 2,
+  "buildCommand": "echo 'Build complete'",
   "installCommand": "cd backend && npm install",
-  "buildCommand": "cd backend && npm install",
-  "public": true,
   "builds": [
     {
       "src": "backend/api/**/*.js",
@@ -22,7 +21,7 @@
     {
       "src": "/api/messages",
       "dest": "/backend/api/messages.js",
-      "methods": ["GET", "OPTIONS"]
+      "methods": ["GET", "DELETE", "OPTIONS"]
     },
     {
       "src": "/(.*)\\.(js|css|svg|png|jpg|jpeg|gif|ico)$",

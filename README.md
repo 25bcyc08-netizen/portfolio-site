@@ -3,14 +3,15 @@
 This repository contains a simple portfolio website with a contact form.
 
 - **Frontend**: static HTML/CSS/JS (`frontend/`)
-- **Backend**: serverless APIs using SQLite (`backend/api/*.js`)
-  - Deployed on Vercel as serverless functions
-  - Stores messages in a local SQLite database file (paths can be overridden
-    with `DB_PATH` environment variable)
+- **Backend**: serverless APIs using SQLite (see `backend/api/db.js`)
+  with a Postgres fallback when `DATABASE_URL` is defined.
+  - The logic is shared between serverless functions and the local Express
+    server.
+  - Data is persisted in a SQLite file (`backend/messages.sqlite` by default)
+    but you can set `DB_PATH` or `DATABASE_URL` for other setups.
 - **(Optional)** `backend/server.js` is an Express app that runs locally using
-  the same SQLite database, and it exposes `/api/contact` and `/api/messages`.
-  The frontend requests no longer need manual modification when running on a
-  different port.
+  the same database and exposes `/api/contact` and `/api/messages` so the
+  frontend never needs to know about ports or origins.
 
 ## Local development
 
@@ -20,57 +21,67 @@ This repository contains a simple portfolio website with a contact form.
    cd backend
    npm install
    ```
-   (the `sqlite3` package is included already; no additional install is
-   necessary).
-3. Start the backend (this runs the Express server at `http://localhost:5000`):
+   (the `sqlite3` package is already included).
+3. Start the backend server:
    ```powershell
    npm start
    ```
-   By default the SQLite database file will be created at
-   `backend/messages.sqlite`. You can override this with a `DB_PATH`
-   environment variable.
+   This will listen on `http://localhost:5000`. The SQLite file will be
+   created at `backend/messages.sqlite` unless you override it with `DB_PATH`.
 4. Serve the frontend for testing:
    ```powershell
    cd ../frontend
    npx http-server -c-1 . -p 8080
    ```
-   The frontend script will automatically point requests to `http://localhost:5000/api`.
-5. Open the site in your browser and submit the contact form. Messages are
-   displayed under "Submitted Messages". API routes remain `/api/contact` and
-   `/api/messages`.
+   The frontend automatically prefixes requests with `/api` and points to
+   `http://localhost:5000` when running locally.
+5. Open `http://localhost:8080` in your browser and submit the contact form.
+   Submitted messages appear under "Submitted Messages"; all API calls go to
+   `/api/contact` and `/api/messages`.
 
 
 ## Running the serverless functions locally
 
-Install the Vercel CLI and run the development environment:
+Install the Vercel CLI and run:
 ```powershell
 npm i -g vercel
-$env:MONGODB_URI="<your connection string>"
 vercel dev
 ```
-This will emulate the `/api/contact` and `/api/messages` routes.
+This will emulate the `/api/contact` and `/api/messages` routes using the same
+code found under `backend/api`.
+
+> **Important:** the built‑in SQLite fallback stores the database in a file.
+> On Vercel serverless functions the project folder is read‑only, so the
+> helper automatically writes to `/tmp/messages.sqlite`. That file is
+> **ephemeral** and will be discarded between deployments or even between
+> function invocations. If you want your messages to persist you should:
+> 
+> 1. Provide a real database by setting the `DATABASE_URL` environment variable
+>    (Postgres is supported out of the box). or
+> 2. Configure `DB_PATH=/tmp/messages.sqlite` and accept that data is lost
+>    whenever the functions spin up a fresh container (not recommended for
+>    production).
+> 
+> The default behaviour makes the app “work” on Vercel, but it’s expected
+> that the live server will appear empty after each redeploy or after a short
+> period of time; that’s normal for ephemeral storage.
 
 ## Deployment to Vercel
 
 1. Push your code to a Git repository (GitHub, GitLab, Bitbucket).
 2. Import the repo into Vercel (https://vercel.com/new). The `vercel.json`
    config handles static files and API routing.
-3. Add the environment variable:
-   - Navigate to **Settings > Environment Variables** in your Vercel project.
-   - Add a variable named `MONGODB_URI` with your MongoDB connection string.
-   - Set the appropriate scope (Production/Preview/Development).
-4. Trigger a deploy by pushing a commit or clicking "Deploy". Wait for the
-   deployment to finish.
-5. Open the site URL on any device, including your phone.
+3. (Optional) If you want to use Postgres instead of SQLite, set `DATABASE_URL`
+   in the project environment variables. Otherwise no variables are required.
+4. Trigger a deploy by pushing a commit or clicking "Deploy".
+5. Open the deployed site URL on any device.
 
 ### Troubleshooting
 
-- If the deployment logs show a `500` error and the message
-  `MONGODB_URI not set` or similar, re-check that the environment variable was
-  added correctly and the project was redeployed after adding it.
-- Ensure your MongoDB Atlas cluster allows connections from Vercel IPs or
-  configure the IP whitelist accordingly.
-- Use `vercel logs` or the web dashboard to inspect function logs.
+- If you see `500` errors from the API, check function logs with `vercel logs`.
+- Make sure any `DATABASE_URL` you supply is correct and reachable.
+- Local development uses CORS on the backend so the frontend can run from a
+  different port.
 
 ## Notes
 

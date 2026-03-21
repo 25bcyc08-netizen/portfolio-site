@@ -45,23 +45,37 @@
         <!-- Contact Section -->
         <section id="contact">
             <h2>Contact Me</h2>
-            <form id="contactForm" aria-label="Contact Form">
-                <label for="name">Name:</label>
-                <input type="text" id="name" name="name" placeholder="Your Name" autocomplete="name" required>
+            <form id="contactForm" aria-label="Contact Form" novalidate>
+                <div class="form-group">
+                    <label for="name">Name:</label>
+                    <input type="text" id="name" name="name" placeholder="Your Name" autocomplete="name" required aria-describedby="name-error" maxlength="100">
+                    <span id="name-error" class="error-message" aria-live="polite"></span>
+                </div>
 
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" placeholder="Your Email" autocomplete="email" required>
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email" placeholder="Your Email" autocomplete="email" required aria-describedby="email-error" maxlength="254">
+                    <span id="email-error" class="error-message" aria-live="polite"></span>
+                </div>
 
-                <label for="message">Message:</label>
-                <textarea id="message" name="message" placeholder="Your Message" autocomplete="off" required></textarea>
+                <div class="form-group">
+                    <label for="message">Message:</label>
+                    <textarea id="message" name="message" placeholder="Your Message" autocomplete="off" required aria-describedby="message-error" maxlength="1000" rows="5"></textarea>
+                    <span id="message-error" class="error-message" aria-live="polite"></span>
+                </div>
 
-                <button type="submit">Send Message</button>
+                <button type="submit" aria-describedby="submit-status">Send Message</button>
+                <div id="submit-status" class="status-message" aria-live="polite" role="status"></div>
             </form>
         </section>
 
         <!-- Messages Section -->
         <section id="messages">
             <h2>Submitted Messages</h2>
+            <div class="messages-header">
+                <button id="clearMessagesBtn" type="button" aria-describedby="clear-status">Clear All Messages</button>
+                <div id="clear-status" class="status-message" aria-live="polite" role="status"></div>
+            </div>
             <div id="messagesList" class="messages-container">
                 <p>Loading messages...</p>
             </div>
