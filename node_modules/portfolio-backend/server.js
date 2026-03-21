@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { connect } from './api/db.js';
 
 // Simple in-memory rate limiter
@@ -24,6 +26,14 @@ function checkRateLimit(ip) {
 }
 
 const app = express();
+
+// Serve static files from frontend directory in production
+if (process.env.NODE_ENV === 'production') {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  app.use(express.static(path.join(__dirname, '../frontend')));
+}
+
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' ? false : true, // Allow all in development
   methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
@@ -138,6 +148,15 @@ app.delete('/api/messages', requireDatabase, async (req, res) => {
     res.status(500).json({ message: 'Database error occurred' });
   }
 });
+
+// Serve index.html for all non-API routes in production
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    res.sendFile(path.join(__dirname, '../frontend/index.html'));
+  });
+}
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => {
