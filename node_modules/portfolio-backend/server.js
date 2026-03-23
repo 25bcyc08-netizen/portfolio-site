@@ -4,6 +4,24 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { connect } from './api/db.js';
 
+// Environment validation
+const requiredEnvVars = [];
+const optionalEnvVars = ['NODE_ENV', 'PORT', 'DATABASE_URL', 'DB_PATH'];
+
+function validateEnvironment() {
+  const missing = requiredEnvVars.filter(key => !process.env[key]);
+  if (missing.length > 0) {
+    console.warn(`Missing required environment variables: ${missing.join(', ')}`);
+  }
+
+  // Log current environment
+  console.log('Environment check:');
+  console.log(`- NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`- PORT: ${process.env.PORT || '5000 (default)'}`);
+  console.log(`- DATABASE_URL: ${process.env.DATABASE_URL ? 'Set (PostgreSQL)' : 'Not set (SQLite)'}`);
+  console.log(`- DB_PATH: ${process.env.DB_PATH || 'Default location'}`);
+}
+
 // Simple in-memory rate limiter
 const rateLimit = new Map();
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
@@ -51,15 +69,25 @@ app.use((req, res, next) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
+  const health = {
+    status: db ? 'healthy' : 'unhealthy',
     timestamp: new Date().toISOString(),
-    database: db ? 'connected' : 'disconnected'
-  });
+    database: {
+      connected: !!db,
+      type: process.env.DATABASE_URL ? 'PostgreSQL' : 'SQLite'
+    },
+    environment: {
+      node_env: process.env.NODE_ENV || 'development',
+      port: process.env.PORT || 5000
+    },
+    uptime: process.uptime()
+  };
+
+  const statusCode = db ? 200 : 503;
+  res.status(statusCode).json(health);
 });
 
 // establish connection (ensures schema too)
-let db;
 connect().then(d => {
   db = d;
   console.log('Database connected successfully');
@@ -159,6 +187,26 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 const port = process.env.PORT || 5000;
-app.listen(port, () => {
-  console.log(`Server listening on http://localhost:${port}`);
+
+// Validate environment on startup
+validateEnvironment();
+
+// Initialize database connection
+let db;
+connect().then(d => {
+  db = d;
+  console.log('✅ Database connected successfully');
+
+  // Start server only after database is ready
+  app.listen(port, () => {
+    console.log(`🚀 Server listening on http://localhost:${port}`);
+    console.log(`📊 Health check: http://localhost:${port}/api/health`);
+    if (process.env.NODE_ENV === 'production') {
+      console.log(`🌐 Frontend served from: http://localhost:${port}`);
+    }
+  });
+}).catch(err => {
+  console.error('❌ Failed to connect to database:', err);
+  console.error('Server cannot start without database connection');
+  process.exit(1);
 });

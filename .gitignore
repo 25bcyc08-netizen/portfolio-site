@@ -16,3 +16,6 @@ Thumbs.db
 # SQLite database
 backend/messages.sqlite
 backend/messages.db
+
+# Database backups
+backups/

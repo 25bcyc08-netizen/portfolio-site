@@ -22,7 +22,12 @@ This repository contains a simple portfolio website with a contact form.
    npm install
    ```
    (the `sqlite3` package is already included).
-3. Start the backend server:
+3. (Optional) Copy environment variables:
+   ```powershell
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+4. Start the backend server:
    ```powershell
    npm start
    ```
@@ -80,6 +85,28 @@ code found under `backend/api`.
 
 - If you see `500` errors from the API, check function logs with `vercel logs`.
 - Make sure any `DATABASE_URL` you supply is correct and reachable.
+
+## Docker Deployment (Alternative)
+
+```bash
+# Build and run with Docker Compose
+docker-compose up --build
+
+# Or manually:
+docker build -t portfolio-site .
+docker run -p 5000:5000 portfolio-site
+```
+
+## Database Backup
+
+To backup your SQLite database:
+```bash
+./backup.sh
+# Or with custom name:
+./backup.sh my_backup
+```
+
+Backups are stored in the `backups/` directory and old backups are automatically cleaned up.
 - Local development uses CORS on the backend so the frontend can run from a
   different port.
 
