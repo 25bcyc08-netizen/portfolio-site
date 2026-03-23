@@ -2,7 +2,7 @@ services:
   - type: web
     name: portfolio-site
     runtime: node
-    buildCommand: "cd backend && npm install"
+    buildCommand: "npm install"
     startCommand: "cd backend && npm start"
     envVars:
       - key: NODE_ENV
